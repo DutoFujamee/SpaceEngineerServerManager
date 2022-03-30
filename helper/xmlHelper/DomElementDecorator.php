@@ -11,7 +11,7 @@ class DomElementDecorator {
 
 	private DOMElement $domElement;
 
-	public function __construct(DOMElement $domElement) {
+	public function __construct(DOMElement $domElement = null) {
 		$this->domElement = $domElement;
 	}
 
@@ -29,12 +29,16 @@ class DomElementDecorator {
 		return $this->domElement->getAttribute($attributeKey);
 	}
 
+	public function getXsiType(): string {
+		return $this->getStringAttribute('xsi:type');
+	}
+
 	/**
 	 * @param string|null $tagName
 	 * @param bool $strict If true, then if another tagName is found, then throw an error
 	 * @return DomElementDecorator[]
 	 */
-	public function getChildrenByTagName(?string $tagName = null, bool $strict = false): array {
+	public function getChildrenFromTagName(?string $tagName = null, bool $strict = false): array {
 		$children = array();
 		foreach ($this->domElement->childNodes as $child) {
 			/** @var DOMElement $child */
@@ -47,12 +51,27 @@ class DomElementDecorator {
 		return $children;
 	}
 
-	public function getUniqueChildByTagName(string $tagName): DomElementDecorator {
-		$children = $this->getChildrenByTagName($tagName);
+	public function getUniqueChildFromTagName(string $tagName): DomElementDecorator {
+		$children = $this->getNullableUniqueChildFromTagName($tagName);
+		if ($children === null) {
+			throw new LogicException($tagName . ' not found');
+		}
+		return $children;
+	}
+
+	public function getNullableUniqueChildFromTagName(string $tagName): ?DomElementDecorator {
+		$children = $this->getChildrenFromTagName($tagName);
+		if (count($children) === 0) {
+			return null;
+		}
 		if (count($children) !== 1) {
 			throw new LogicException(count($children) . ' children found');
 		}
 		return $children[0];
+	}
+
+	public function getText(): string {
+		return $this->domElement->nodeValue;
 	}
 
 }
